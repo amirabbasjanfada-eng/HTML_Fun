@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cosmic Nebula</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #070913; }
+  canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<script type="module">
+  // Reference wallpaper: ES module, Pointer Events, device-pixel-ratio aware canvas and
+  // delta-time animation (speed stays the same whatever frame-rate cap is chosen in WebPaper).
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const COLORS = ['#00f0ff', '#a855f7', '#ec4899', '#3b82f6'];
+  const LINK_DISTANCE = 110;
+  const TOUCH_RADIUS = 180;
+
+  const rgba = (hex, a) => {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+  };
+
+  // Pre-rendered soft glow per colour: much cheaper than ctx.shadowBlur on every particle.
+  const sprites = COLORS.map((color) => {
+    const size = 40;
+    const sprite = document.createElement('canvas');
+    sprite.width = sprite.height = size;
+    const g = sprite.getContext('2d');
+    const gradient = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(0.3, rgba(color, 0.55));
+    gradient.addColorStop(1, rgba(color, 0));
+    g.fillStyle = gradient;
+    g.fillRect(0, 0, size, size);
+    return sprite;
+  });
+
+  let width = 0;
+  let height = 0;
+  const particles = [];
+  const touch = { x: -1000, y: -1000, active: false };
+
+  const spawn = () => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    vx: (Math.random() - 0.5) * 1.2,
+    vy: (Math.random() - 0.5) * 1.2,
+    r: Math.random() * 2.5 + 1.5,
+    sprite: sprites[Math.floor(Math.random() * sprites.length)],
+  });
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const target = Math.max(40, Math.min(100, Math.floor((width * height) / 12000)));
+    while (particles.length < target) particles.push(spawn());
+    particles.length = target;
+    for (const p of particles) {
+      p.x = Math.min(p.x, width);
+      p.y = Math.min(p.y, height);
+    }
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const setTouch = (e, active) => {
+    touch.x = e.clientX;
+    touch.y = e.clientY;
+    touch.active = active;
+  };
+  window.addEventListener('pointerdown', (e) => setTouch(e, true), { passive: true });
+  window.addEventListener('pointermove', (e) => { if (touch.active) setTouch(e, true); }, { passive: true });
+  window.addEventListener('pointerup', () => { touch.active = false; }, { passive: true });
+  window.addEventListener('pointercancel', () => { touch.active = false; }, { passive: true });
+
+  let last = performance.now();
+
+  function frame(now) {
+    const dt = Math.min(48, now - last) / 16.667; // 1.0 == one 60 fps frame
+    last = now;
+
+    ctx.fillStyle = 'rgba(7, 9, 19, 0.2)';
+    ctx.fillRect(0, 0, width, height);
+
+    if (touch.active) {
+      const glow = ctx.createRadialGradient(touch.x, touch.y, 5, touch.x, touch.y, 140);
+      glow.addColorStop(0, 'rgba(0, 240, 255, 0.35)');
+      glow.addColorStop(1, 'rgba(0, 240, 255, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(touch.x, touch.y, 140, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const friction = Math.pow(0.985, dt);
+    ctx.lineWidth = 1.2;
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+
+      if (touch.active) {
+        const dx = touch.x - p.x;
+        const dy = touch.y - p.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < TOUCH_RADIUS && dist > 2) {
+          const force = ((TOUCH_RADIUS - dist) / TOUCH_RADIUS) * 0.4 * dt;
+          p.vx += (dx / dist) * force;
+          p.vy += (dy / dist) * force;
+        }
+      }
+
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= friction;
+      p.vy *= friction;
+
+      if (Math.abs(p.vx) < 0.2) p.vx += (Math.random() - 0.5) * 0.4;
+      if (Math.abs(p.vy) < 0.2) p.vy += (Math.random() - 0.5) * 0.4;
+
+      if (p.x < 0) { p.x = 0; p.vx *= -1; }
+      if (p.x > width) { p.x = width; p.vx *= -1; }
+      if (p.y < 0) { p.y = 0; p.vy *= -1; }
+      if (p.y > height) { p.y = height; p.vy *= -1; }
+
+      const reach = p.r * 5;
+      ctx.drawImage(p.sprite, p.x - reach, p.y - reach, reach * 2, reach * 2);
+
+      for (let j = i + 1; j < particles.length; j++) {
+        const q = particles[j];
+        const dx = p.x - q.x;
+        const dy = p.y - q.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < LINK_DISTANCE) {
+          ctx.strokeStyle = `rgba(0, 240, 255, ${(1 - dist / LINK_DISTANCE) * 0.6})`;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "HTML Fun",
+  "description": "Run interactive HTML, CSS, and JavaScript as live wallpapers with full animation, touch support, and screen options.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

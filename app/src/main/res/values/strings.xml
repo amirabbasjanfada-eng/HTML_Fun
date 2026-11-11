@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">HTML Fun</string>
+    <string name="wallpaper_service_name">HTML Fun - Home screen</string>
+    <string name="wallpaper_lock_service_name">HTML Fun - Lock screen</string>
+    <string name="wallpaper_description">Shows the wallpaper you chose for the Home screen in HTML Fun</string>
+    <string name="wallpaper_lock_description">Shows the wallpaper you chose for the Lock screen in HTML Fun</string>
+    <string name="desc_app_logo">HTML Fun Logo</string>
+</resources>

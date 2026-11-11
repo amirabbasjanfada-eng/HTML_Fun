@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>New wallpaper</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #05070d; }
+    canvas { display: block; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <script type="module">
+    // Modern JavaScript (ES modules, async/await, optional chaining ...) runs here.
+    // Add a library with the chips under the editor, or import any npm package:
+    //   import confetti from 'https://esm.sh/canvas-confetti';
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let width = 0;
+    let height = 0;
+
+    const resize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    addEventListener('resize', resize);
+    resize();
+
+    // Pointer Events cover touch, pen and mouse in one API.
+    const pointer = { x: width / 2, y: height / 2, down: false };
+    addEventListener('pointerdown', (e) => { pointer.down = true; pointer.x = e.clientX; pointer.y = e.clientY; });
+    addEventListener('pointermove', (e) => { pointer.x = e.clientX; pointer.y = e.clientY; });
+    addEventListener('pointerup', () => { pointer.down = false; });
+
+    const orb = { x: width / 2, y: height / 2 };
+    let last = performance.now();
+
+    const frame = (now) => {
+      const dt = Math.min(48, now - last) / 16.667; // 1.0 == one 60 fps frame
+      last = now;
+
+      // Fade the previous frame a little to leave a trail.
+      ctx.fillStyle = 'rgba(5, 7, 13, 0.16)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Ease towards the pointer. Scaling by dt keeps the speed identical at 30, 60 or 120 fps.
+      const ease = 1 - Math.pow(0.88, dt);
+      orb.x += (pointer.x - orb.x) * ease;
+      orb.y += (pointer.y - orb.y) * ease;
+
+      const t = now / 1000;
+      const radius = (pointer.down ? 46 : 26) + Math.sin(t * 3) * 6;
+      ctx.beginPath();
+      ctx.arc(orb.x, orb.y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = `hsl(${(t * 40) % 360} 90% 60% / 0.9)`;
+      ctx.fill();
+
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
