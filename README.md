@@ -1,6 +1,6 @@
 <div align="center">
 
-[![Download APK](https://img.shields.io/badge/Download-APK-brightgreen?style=for-the-badge&logo=android)](https://github.com/amirabbasjanfada-eng/HTML_Fun/releases/latest)
+[![Download APK](https://img.shields.io/badge/Download-APK-brightgreen?style=for-the-badge&logo=android)](https://github.com/amirabbasjanfada-eng/HTML_Fun/releases/latest/download/app-release.apk)
 
 </div>
 
