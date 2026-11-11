@@ -43,7 +43,7 @@ jobs:
           set -eu
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-          "$SDKMANAGER" "platform-tools" "platforms;android-36" "platforms;android-36-ext1" "build-tools;36.0.0"
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "platforms;android-36.1" "build-tools;36.0.0"
 
       - name: Create debug signing key
         shell: bash
