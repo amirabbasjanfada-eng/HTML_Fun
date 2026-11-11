@@ -40,7 +40,7 @@ jobs:
           ANDROID_HOME: /usr/local/lib/android/sdk
         shell: bash
         run: |
-          set -euo pipefail
+          set -eu
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMANAGER" --licenses >/dev/null
           "$SDKMANAGER" "platform-tools" "platforms;android-36" "platforms;android-36-ext1" "build-tools;36.0.0"
