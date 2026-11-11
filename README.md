@@ -1,4 +1,10 @@
 <div align="center">
+
+[![Download APK](https://img.shields.io/badge/Download-APK-brightgreen?style=for-the-badge&logo=android)](https://github.com/amirabbasjanfada-eng/HTML_Fun/releases/latest)
+
+</div>
+
+<div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
 </div>
 
