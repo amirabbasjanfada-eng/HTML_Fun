@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -65,7 +65,8 @@ jobs:
           fi
           gradle --no-daemon :app:assembleRelease
 
-      - name: Verify signed APK
+      - name: Verify signed APK and read app version
+        id: app_version
         shell: bash
         run: |
           set -euo pipefail
@@ -75,11 +76,31 @@ jobs:
           sha256sum "$APK"
           APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
           "$APKSIGNER" verify --verbose "$APK"
+          VERSION_NAME=$(sed -n 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' app/build.gradle.kts | head -n 1)
+          if [ -z "$VERSION_NAME" ]; then
+            echo "::error::Could not read versionName from app/build.gradle.kts"
+            exit 1
+          fi
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "tag_name=v$VERSION_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Upload release APK
+      - name: Upload release APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: HTML-Fun-release-apk
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish permanent GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.app_version.outputs.tag_name }}
+          name: HTML-Fun ${{ steps.app_version.outputs.version_name }}
+          body: |
+            Signed release APK for HTML-Fun.
+
+            Download `app-release.apk` below to install the app.
+          files: app/build/outputs/apk/release/app-release.apk
+          overwrite_files: true
+          make_latest: true
